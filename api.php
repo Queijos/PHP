@@ -33,6 +33,8 @@
 		nome = '".$data->nome."',
 		email = '".$data->email."',
 		telefone = '".$data->telefone."',
+		data_nasc = '".$data->data_nasc."',
+		genero = '".$data->genero."',
 		senha = '".$data->senha."'
 		where id = '$id'");
 		if($sql){
@@ -47,7 +49,7 @@
 	if($_SERVER['REQUEST_METHOD'] === 'POST'){
 	// GRAVAR INFORMAÇÕES
 	$data = json_decode(file_get_contents("php://input"));
-	$sql = $con->query("insert into cliente(nome, email, telefone, senha) values ('".$data->nome."','".$data->email."','".$data->telefone."','".$data->senha."')");
+	$sql = $con->query("insert into cliente(nome, email, telefone, data_nasc, genero, senha) values ('".$data->nome."','".$data->email."','".$data->telefone."','".$data->data_nasc."','".$data->genero."','".$data->senha."')");
 	if($sql){
 		$data->id = $con->insert_id;
 		exit(json_encode($data));
@@ -68,4 +70,67 @@
 			}
 		}
 	}
+	if($_SERVER['REQUEST_METHOD'] === 'POST'){
+		// GRAVAR INFORMAÇÕES
+		if(isset($_GET['login'])){
+			// Esta é a nova rota de login
+			$data = json_decode(file_get_contents("php://input"));
+			$email = $data->email;
+			$senha = $data->senha;
+			$sql = $con->query("select * from cliente where email='$email'");
+			if($sql){
+				$user = $sql->fetch_assoc();
+				if($user['senha'] == $senha){
+					// Sucesso no login
+					exit(json_encode(array('status'=> 'Sucesso')));
+				}else{
+					// Falha no login
+					exit(json_encode(array('status'=> 'Falha no login')));
+				}
+			}else{
+				exit(json_encode(array('status'=> 'Usuário não encontrado')));
+			}
+		}else{
+			$data = json_decode(file_get_contents("php://input"));
+			$sql = $con->query("insert into cliente(nome, email, telefone, data_nasc, genero, senha) values ('".$data->nome."','".$data->email."','".$data->telefone."','".$data->data_nasc."','".$data->genero."','".$data->senha."')");
+			if($sql){
+				$data->id = $con->insert_id;
+				exit(json_encode($data));
+			}else{
+				exit(json_encode(array("status"=> "Não Funcionou")));
+			}
+		}
+	}
+	if($_SERVER['REQUEST_METHOD'] === 'POST'){
+		// GRAVAR INFORMAÇÕES
+		if(isset($_GET['login'])){
+			// Esta é a nova rota de login
+			$data = json_decode(file_get_contents("php://input"));
+			$email = $data->email;
+			$senha = $data->senha;
+			$sql = $con->query("select * from cliente where email='$email'");
+			if($sql){
+				$user = $sql->fetch_assoc();
+				if($user['senha'] == $senha){
+					// Sucesso no login
+					exit(json_encode(array('status'=> 'Sucesso')));
+				}else{
+					// Falha no login
+					exit(json_encode(array('status'=> 'Falha no login')));
+				}
+			}else{
+				exit(json_encode(array('status'=> 'Usuário não encontrado')));
+			}
+		}else{
+			$data = json_decode(file_get_contents("php://input"));
+			$sql = $con->query("insert into cliente(nome, email, telefone, data_nasc, genero, senha) values ('".$data->nome."','".$data->email."','".$data->telefone."','".$data->data_nasc."','".$data->genero."','".$data->senha."')");
+			if($sql){
+				$data->id = $con->insert_id;
+				exit(json_encode($data));
+			}else{
+				exit(json_encode(array("status"=> "Não Funcionou")));
+			}
+		}
+	}
+		
 ?>
