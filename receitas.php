@@ -61,21 +61,40 @@ switch ($method) {
     
     case 'POST':
         // GRAVAR INFORMAÇÕES DA RECEITA
-        $data = json_decode(file_get_contents("php://input"));
+        if (isset($_FILES['imagem'])) {
+            $usuario_id = $_POST['usuario_id'];
+            $titulo = $_POST['titulo'];
+            $descricao = $_POST['descricao'];
+            
+            // Diretório onde a imagem será salva
+            $target_dir = "uploads/";
+            if (!is_dir($target_dir)) {
+                mkdir($target_dir, 0777, true);
+            }
+            $target_file = $target_dir . basename($_FILES["imagem"]["name"]);
 
-        $usuario_id = $data->usuario_id;
-        $titulo = $data->titulo;
-        $descricao = $data->descricao;
-        $imagem = $data->imagem;
-
-        $sql = $con->prepare("INSERT INTO receitas(usuario_id, titulo, descricao, imagem) VALUES (?, ?, ?, ?)");
-        $sql->bind_param("isss", $usuario_id, $titulo, $descricao, $imagem);
-        $result = $sql->execute();
-        if ($result) {
-            $data->receitaid = $con->insert_id;
-            exit(json_encode($data));
+            // Move o arquivo para o diretório de destino
+            if (move_uploaded_file($_FILES["imagem"]["tmp_name"], $target_file)) {
+                $sql = $con->prepare("INSERT INTO receitas(usuario_id, titulo, descricao, imagem) VALUES (?, ?, ?, ?)");
+                $sql->bind_param("isss", $usuario_id, $titulo, $descricao, $target_file);
+                $result = $sql->execute();
+                if ($result) {
+                    $data = array(
+                        "receitaid" => $con->insert_id,
+                        "usuario_id" => $usuario_id,
+                        "titulo" => $titulo,
+                        "descricao" => $descricao,
+                        "imagem" => $target_file
+                    );
+                    exit(json_encode($data));
+                } else {
+                    exit(json_encode(array("status" => "Não Funcionou", "error" => $con->error)));
+                }
+            } else {
+                exit(json_encode(array("status" => "Erro ao fazer upload da imagem")));
+            }
         } else {
-            exit(json_encode(array("status" => "Não Funcionou")));
+            exit(json_encode(array("status" => "Erro: Nenhuma imagem enviada")));
         }
         break;
     
