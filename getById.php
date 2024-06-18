@@ -18,8 +18,14 @@ if ($con->connect_error) {
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['id'])) {
     $id = $_GET['id'];
     $sql = $con->query("SELECT * FROM cliente WHERE id='$id'");
-    $data = $sql->fetch_assoc();
-    echo json_encode($data);
+    if ($sql) {
+        $data = $sql->fetch_assoc();
+        echo json_encode($data);
+    } else {
+        echo json_encode(array('status'=> 'error', 'message' => 'Erro ao buscar cliente.'));
+    }
     exit;
+} else {
+    echo json_encode(array('status'=> 'error', 'message' => 'ID não fornecido ou método não permitido.'));
 }
 ?>

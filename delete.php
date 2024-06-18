@@ -24,5 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'DELETE' && isset($_GET['id'])) {
         echo json_encode(array('status'=> 'error'));
     }
     exit;
+} else {
+    echo json_encode(array('status'=> 'error', 'message' => 'ID não fornecido ou método não permitido.'));
 }
 ?>

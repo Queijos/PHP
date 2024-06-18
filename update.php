@@ -32,5 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
         echo json_encode(array('status'=> 'error'));
     }
     exit;
+} else {
+    echo json_encode(array('status'=> 'error', 'message' => 'Método não permitido.'));
 }
 ?>
