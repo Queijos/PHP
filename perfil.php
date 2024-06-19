@@ -41,103 +41,81 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $sql->close();
         $con->close();
     } else {
-        echo json_encode(array("status" => "error", "message" => "ID de usuário não fornecido."));
+        echo json_encode(array("status" => "error", "message" => "ID do usuário não foi fornecido."));
     }
-} elseif ($_SERVER['REQUEST_METHOD'] === 'PUT') {
-    // Receber os dados do cliente
+}
+
+// Verificar se o método da requisição é PUT (atualização de perfil)
+if ($_SERVER['REQUEST_METHOD'] === 'PUT') {
+    // Ler os dados da requisição
     $data = json_decode(file_get_contents("php://input"), true);
 
-    // Verificar se todos os campos necessários estão presentes
-    if (isset($data['id']) && isset($data['nome']) && isset($data['email']) && isset($data['telefone']) && isset($data['data_nasc']) && isset($data['genero'])) {
-        $id = $data['id'];
-        $nome = $data['nome'];
-        $email = $data['email'];
-        $telefone = $data['telefone'];
-        $data_nasc = $data['data_nasc'];
-        $genero = $data['genero'];
+    // Conectar ao banco de dados
+    $con = new mysqli('localhost', 'root', '', 'e-studo');
+    if ($con->connect_error) {
+        die("Connection failed: " . $con->connect_error);
+    }
 
-        // Verificar se há um arquivo de imagem
-        $target_file = null;
-        if (isset($_FILES['imagem'])) {
-            $target_dir = "uploads/";
-            $target_file = $target_dir . basename($_FILES['imagem']['name']);
-            $uploadOk = 1;
-            $imageFileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
+    // Atualizar os dados do perfil
+    $sql = $con->prepare("UPDATE cliente SET nome = ?, email = ?, telefone = ?, data_nasc = ?, genero = ? WHERE id = ?");
+    $sql->bind_param("sssssi", $data['nome'], $data['email'], $data['telefone'], $data['data_nasc'], $data['genero'], $data['id']);
 
-            // Verificar se é uma imagem real
-            $check = getimagesize($_FILES['imagem']['tmp_name']);
-            if ($check === false) {
-                $uploadOk = 0;
-            }
+    if ($sql->execute()) {
+        echo json_encode(array("status" => "success", "message" => "Perfil atualizado com sucesso."));
+    } else {
+        echo json_encode(array("status" => "error", "message" => "Erro ao atualizar perfil: " . $con->error));
+    }
 
-            // Limitar tamanho do arquivo
-            if ($_FILES['imagem']['size'] > 500000) {
-                $uploadOk = 0;
-            }
+    $sql->close();
+    $con->close();
+}
 
-            // Permitir apenas certos formatos de arquivo
-            if ($imageFileType != "jpg" && $imageFileType != "png" && $imageFileType != "jpeg" && $imageFileType != "gif") {
-                $uploadOk = 0;
-            }
+// Verificar se o método da requisição é POST (upload de imagem)
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    // Verificar se foi fornecido um ID de usuário e um arquivo
+    if (isset($_GET['action']) && $_GET['action'] === 'uploadImage' && isset($_GET['id']) && isset($_FILES['file'])) {
+        $id = $_GET['id'];
+        $file = $_FILES['file'];
 
-            if ($uploadOk == 0) {
-                echo json_encode(array("status" => "error", "message" => "O arquivo não pôde ser enviado."));
-                exit;
-            } else {
-                if (move_uploaded_file($_FILES['imagem']['tmp_name'], $target_file)) {
-                    // Imagem movida com sucesso
-                } else {
-                    echo json_encode(array("status" => "error", "message" => "Ocorreu um erro ao enviar o arquivo."));
-                    exit;
+        // Pasta onde será feito o upload
+        $uploadDir = "./uploads/";
+
+        // Caminho completo do arquivo
+        $uploadPath = $uploadDir . basename($file['name']);
+
+        // Verificar se o arquivo é uma imagem
+        $imageFileType = strtolower(pathinfo($uploadPath, PATHINFO_EXTENSION));
+        $allowedTypes = array('jpg', 'jpeg', 'png', 'gif');
+
+        if (in_array($imageFileType, $allowedTypes)) {
+            // Tentar mover o arquivo para o diretório de uploads
+            if (move_uploaded_file($file['tmp_name'], $uploadPath)) {
+                // Conectar ao banco de dados
+                $con = new mysqli('localhost', 'root', '', 'e-studo');
+                if ($con->connect_error) {
+                    die("Connection failed: " . $con->connect_error);
                 }
+
+                // Atualizar o campo de imagem do cliente
+                $sql = $con->prepare("UPDATE cliente SET imagem = ? WHERE id = ?");
+                $sql->bind_param("si", $uploadPath, $id);
+
+                if ($sql->execute()) {
+                    echo json_encode(array("status" => "success", "message" => "Imagem do perfil atualizada com sucesso."));
+                } else {
+                    echo json_encode(array("status" => "error", "message" => "Erro ao atualizar imagem do perfil: " . $con->error));
+                }
+
+                $sql->close();
+                $con->close();
+            } else {
+                echo json_encode(array("status" => "error", "message" => "Falha ao fazer upload do arquivo."));
             }
-        }
-
-        // Atualizar no banco de dados
-        $con = new mysqli('localhost', 'root', '', 'e-studo');
-        $sql = $con->prepare("UPDATE cliente SET nome=?, email=?, telefone=?, data_nasc=?, genero=?, imagem=? WHERE id=?");
-        $sql->bind_param("ssssssi", $nome, $email, $telefone, $data_nasc, $genero, $target_file, $id);
-
-        if ($sql->execute()) {
-            echo json_encode(array("status" => "success", "message" => "Perfil atualizado com sucesso."));
         } else {
-            echo json_encode(array("status" => "error", "message" => "Erro ao atualizar perfil."));
+            echo json_encode(array("status" => "error", "message" => "Apenas arquivos JPG, JPEG, PNG e GIF são permitidos."));
         }
-
-        $sql->close();
-        $con->close();
     } else {
-        echo json_encode(array("status" => "error", "message" => "Parâmetros inválidos."));
+        echo json_encode(array("status" => "error", "message" => "Dados inválidos para upload de imagem."));
     }
-} elseif ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
-    // Receber o ID do perfil a ser deletado
-    $data = json_decode(file_get_contents("php://input"), true);
-
-    if (isset($data['id'])) {
-        $id = $data['id'];
-
-        // Conectar ao banco de dados
-        $con = new mysqli('localhost', 'root', '', 'e-studo');
-        if ($con->connect_error) {
-            die("Connection failed: " . $con->connect_error);
-        }
-
-        // Deletar perfil do banco de dados
-        $sql = $con->prepare("DELETE FROM cliente WHERE id=?");
-        $sql->bind_param("i", $id);
-
-        if ($sql->execute()) {
-            echo json_encode(array("status" => "success", "message" => "Perfil deletado com sucesso."));
-        } else {
-            echo json_encode(array("status" => "error", "message" => "Erro ao deletar perfil."));
-        }
-
-        $sql->close();
-        $con->close();
-    } else {
-        echo json_encode(array("status" => "error", "message" => "ID de perfil não fornecido."));
-    }
-} else {
-    echo json_encode(array("status" => "error", "message" => "Método não permitido."));
 }
 ?>
