@@ -26,18 +26,18 @@ switch ($method) {
         // PEGANDO AS INFORMAÇÕES DAS RECEITAS DO BANCO DE DADOS
         if (isset($_GET['receitaid'])) {
             $id = $_GET['receitaid'];
-            $sql = $con->query("SELECT * FROM receitas WHERE receitaid='$id'");
+            $sql = $con->query("SELECT r.*, c.nome AS usuario_nome FROM receitas r JOIN cliente c ON r.usuario_id = c.id WHERE r.receitaid='$id'");
             $data = $sql->fetch_assoc();
         } else {
             $data = array();
-            $sql = $con->query("SELECT * FROM receitas");
+            $sql = $con->query("SELECT r.*, c.nome AS usuario_nome FROM receitas r JOIN cliente c ON r.usuario_id = c.id");
             while ($d = $sql->fetch_assoc()) {
                 $data[] = $d;
             }
         }
         exit(json_encode($data));
         break;
-    
+
     case 'PUT':
         // ALTERAR INFORMAÇÕES DA RECEITA
         parse_str(file_get_contents("php://input"), $put_vars);
@@ -58,7 +58,7 @@ switch ($method) {
             }
         }
         break;
-    
+
     case 'POST':
         // GRAVAR INFORMAÇÕES DA RECEITA
         if (isset($_FILES['imagem'])) {
@@ -97,7 +97,7 @@ switch ($method) {
             exit(json_encode(array("status" => "Erro: Nenhuma imagem enviada")));
         }
         break;
-    
+
     case 'DELETE':
         // APAGAR INFORMAÇÕES DA RECEITA DO BANCO
         parse_str(file_get_contents("php://input"), $delete_vars);
@@ -114,7 +114,7 @@ switch ($method) {
             }
         }
         break;
-    
+
     default:
         echo json_encode(array('status' => 'Erro: Método não suportado'));
         break;
