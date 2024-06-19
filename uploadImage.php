@@ -68,42 +68,6 @@ switch ($method) {
         }
         break;
 
-    case 'GET':
-        // Obtém o caminho da imagem do cliente
-        if (isset($_GET['id'])) {
-            $clienteId = $_GET['id'];
-
-            // Busca o caminho da imagem do cliente no banco de dados
-            $sql = "SELECT imagem FROM cliente WHERE id = '$clienteId'";
-            $result = $conn->query($sql);
-
-            if ($result->num_rows > 0) {
-                $row = $result->fetch_assoc();
-                $imagem = $row['imagem'];
-
-                // Retorna a URL da imagem
-                $response = array(
-                    'success' => true,
-                    'imagem' => $imagem
-                );
-                echo json_encode($response);
-            } else {
-                // Se não houver imagem, retorna um placeholder ou uma mensagem de erro
-                $response = array(
-                    'success' => false,
-                    'message' => "Nenhuma imagem encontrada para o cliente com ID $clienteId"
-                );
-                echo json_encode($response);
-            }
-        } else {
-            $response = array(
-                'success' => false,
-                'message' => "ID de cliente não fornecido."
-            );
-            echo json_encode($response);
-        }
-        break;
-
     default:
         echo json_encode(array('status' => 'Erro: Método não suportado'));
         break;
